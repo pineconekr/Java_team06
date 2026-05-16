@@ -41,8 +41,9 @@
 |---|---|---|---|
 | `SearchSvc` | `searchByTitle(keyword)` | `List<Book>` | 제목 검색 |
 | `SearchSvc` | `searchByAuthor(keyword)` | `List<Book>` | 저자 검색 |
-| `SearchSvc` | `searchByIsbn(isbn)` | `Optional<Book>` | ISBN 검색 |
+| `SearchSvc` | `searchByIsbn(isbn)` | `List<Book>` | ISBN 검색 |
 | `SearchSvc` | `searchByCategory(category)` | `List<Book>` | 카테고리 검색 |
+| `SearchSvc` | `searchAll(keyword)` | `List<Book>` | 전체 필드 통합 검색 |
 
 ---
 
