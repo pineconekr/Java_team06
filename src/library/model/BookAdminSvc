@@ -1,0 +1,36 @@
+package library.model; 
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class BookAdminSvc {
+    // 도서 데이터를 저장할 리스트
+    private final List<Book> bookList = new ArrayList<>();
+
+    // 1. 도서 등록
+    public void addBook(Book book) {
+        bookList.add(book);
+    }
+
+    // 2. 도서 수정
+    public boolean updateBook(String isbn, Book book) {
+        for (int i = 0; i < bookList.size(); i++) {
+            if (bookList.get(i).getIsbn().equals(isbn)) {
+                bookList.set(i, book);
+                return true; // 수정 성공 시 true 반환 후 종료
+            }
+        }
+        return false; // 해당 isbn의 도서가 없으면 false 반환
+    }
+
+    // 3. 도서 삭제
+    public boolean deleteBook(String isbn) {
+        for (int i = 0; i < bookList.size(); i++) {
+            if (bookList.get(i).getIsbn().equals(isbn)) {
+                bookList.remove(i);
+                return true; // 삭제 성공 시 true 반환 후 종료
+            }
+        }
+        return false; // 해당 isbn의 도서가 없으면 false 반환
+    }
+}
