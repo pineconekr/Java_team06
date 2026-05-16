@@ -1,12 +1,14 @@
 package library.service;
 
-import library.model.Book;
 import library.model.BookStatus;
 import library.model.Loan;
 import library.model.Member;
-import library.repository.BookRepository;
-import library.repository.LoanRepository;
-import library.repository.MemberRepository;
+import library.repository.IBookRepository;
+import library.repository.ILoanRepository;
+import library.repository.IMemberRepository;
+import library.repository.InMemoryBookRepository;
+import library.repository.InMemoryLoanRepository;
+import library.repository.InMemoryMemberRepository;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -39,9 +41,22 @@ public class ReturnSvc {
         }
     }
 
-    private final LoanRepository loanRepo = LoanRepository.getInstance();
-    private final BookRepository bookRepo = BookRepository.getInstance();
-    private final MemberRepository memberRepo = MemberRepository.getInstance();
+    private final ILoanRepository loanRepo;
+    private final IBookRepository bookRepo;
+    private final IMemberRepository memberRepo;
+
+    public ReturnSvc() {
+        this(InMemoryLoanRepository.getInstance(),
+             InMemoryBookRepository.getInstance(),
+             InMemoryMemberRepository.getInstance());
+    }
+
+    // MySQL 전환 시 이 생성자로 주입
+    public ReturnSvc(ILoanRepository loanRepo, IBookRepository bookRepo, IMemberRepository memberRepo) {
+        this.loanRepo = loanRepo;
+        this.bookRepo = bookRepo;
+        this.memberRepo = memberRepo;
+    }
 
     public ReturnInfo returnBook(int loanId) {
         Optional<Loan> loanOpt = loanRepo.findById(loanId);
