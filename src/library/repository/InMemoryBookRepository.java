@@ -16,6 +16,7 @@ public class InMemoryBookRepository implements IBookRepository {
     public static InMemoryBookRepository getInstance() { return INSTANCE; }
 
     @Override public void add(Book book) { books.put(book.getIsbn(), book); }
+    @Override public boolean delete(String isbn) { return books.remove(isbn) != null; }
     @Override public Optional<Book> findByIsbn(String isbn) { return Optional.ofNullable(books.get(isbn)); }
     @Override public List<Book> findAll() { return new ArrayList<>(books.values()); }
 }
