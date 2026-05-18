@@ -73,7 +73,7 @@ public class BorrowSvc {
         member.setCurrentBorrowCount(member.getCurrentBorrowCount() + 1); // 회원의 대출 권수 +1
 
         // 6. 대출 장부(Loan) 생성 및 기록 저장
-        // 팀원이 짠 구조 덕분에 memberId와 isbn만 던지면 오늘 날짜와 14일 뒤 반납일이 자동 계산됩니다!
+        // memberid , isbn사용
         Loan newLoan = new Loan(memberId, isbn);
         loanRepo.save(newLoan); // 대출 이력 저장소에 기록 보관
 
