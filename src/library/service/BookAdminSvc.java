@@ -9,9 +9,7 @@ import library.repository.IBookRepository;
 import library.repository.InMemoryBookRepository;
 
 /**
- * 도서 관리자 서비스
- * - 프로젝트의 기존 String 식별자 규격을 그대로 유지하여 컴파일 에러를 방지합니다.
- * - 내부적으로는 ISBN 필수 유효성 검사 및 중복 체크를 완전히 제거했습니다.
+ * 도서 관리자 서비스 (도서 수동 등록 및 국립중앙도서관 OpenAPI 연동 수집)
  */
 public class BookAdminSvc {
 
@@ -31,24 +29,30 @@ public class BookAdminSvc {
 
     /**
      * 1. 관리자가 시스템에 도서를 수동으로 직접 등록합니다.
-     * (ISBN 검증과 중복 검사를 모두 없애고 자유롭게 등록을 허용합니다.)
      */
     public boolean registerBook(Book book) {
-        if (book == null) {
+        if (book == null || book.getIsbn() == null || book.getIsbn().trim().isEmpty()) {
             return false;
         }
 
-        // 도서 상태를 AVAILABLE(대출 가능)로 보장한 후 중복 검사 없이 바로 추가
-        book.setStatus(BookStatus.AVAILABLE);
+        // 중복 ISBN 검증
+        if (bookRepo.findByIsbn(book.getIsbn()).isPresent()) {
+            return false; // 이미 등록된 도서
+        }
+
+        // 기본 상태를 AVAILABLE로 보장하며 저장소에 추가
+        if (book.getStatus() == null) {
+            book.setStatus(BookStatus.AVAILABLE);
+        }
         bookRepo.add(book);
         return true;
     }
 
     /**
-     * 2. 국립중앙도서관 OpenAPI를 통해 도서를 검색하고 대량 수집/등록합니다.
-     * (기존에 존재하던 중복 ISBN 패스 로직을 없애고 수집된 데이터를 그대로 등록합니다.)
+     * 2. 국립중앙도서관 OpenAPI를 통해 키워드로 도서를 검색하고,
+     * 검색된 도서들을 시스템 저장소에 자동으로 일괄 등록(수집)합니다.
      */
-    public int collectApiBooks(String keyword) {
+    public int collectAndRegisterFromAPI(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return 0;
         }
@@ -57,9 +61,15 @@ public class BookAdminSvc {
         int successCount = 0;
 
         for (Book book : collectedBooks) {
-            // 이미 존재하는 책인지 묻지도 따지지도 않고 무조건 저장소에 추가
-            bookRepo.add(book);
-            successCount++;
+            // ISBN이 없는 데이터는 건너뜀 (저장소 키 충돌 방지)
+            if (book.getIsbn() == null || book.getIsbn().trim().isEmpty()) {
+                continue;
+            }
+            // 이미 저장소에 존재하는 ISBN인지 체크하여 중복 등록 방지
+            if (bookRepo.findByIsbn(book.getIsbn()).isEmpty()) {
+                bookRepo.add(book);
+                successCount++;
+            }
         }
 
         return successCount;
