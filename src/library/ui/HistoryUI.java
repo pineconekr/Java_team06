@@ -12,7 +12,7 @@ import java.util.List;
 // 대출 이력 조회 화면
 public class HistoryUI extends JPanel {
 
-    private final HistorySvc svc = new HistorySvc();
+    private final HistorySvc svc;
 
     private final JTextField memberIdField = new JTextField(15);
     private final JRadioButton allBtn      = new JRadioButton("전체", true);
@@ -25,7 +25,8 @@ public class HistoryUI extends JPanel {
     };
     private final JTable table = new JTable(tableModel);
 
-    public HistoryUI() {
+    public HistoryUI(HistorySvc svc) {
+        this.svc = svc;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         add(buildSearchPanel(), BorderLayout.NORTH);

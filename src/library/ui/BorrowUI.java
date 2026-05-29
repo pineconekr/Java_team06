@@ -66,17 +66,17 @@ public class BorrowUI extends JFrame {
                 // 결과에 따른 맞춤형 메시지창 띄우기
                 switch (result) {
                     case SUCCESS -> {
-                        JOptionPane.showMessageDialog(null, "🎉 대출이 성공적으로 완료되었습니다!", "성공", JOptionPane.INFORMATION_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "대출이 성공적으로 완료되었습니다!", "성공", JOptionPane.INFORMATION_MESSAGE);
                         dispose(); // 대출 창 닫기
                     }
                     case FAIL_NOT_AVAILABLE -> {
-                        JOptionPane.showMessageDialog(null, "❌ 대출 불가: 존재하지 않는 도서이거나 이미 대출 중입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "대출 불가: 존재하지 않는 도서이거나 이미 대출 중입니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     }
                     case FAIL_SUSPENDED -> {
-                        JOptionPane.showMessageDialog(null, "❌ 대출 불가: 연체 패널티로 인해 정지된 회원입니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "대출 불가: 연체 패널티로 인해 정지된 회원입니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     }
                     case FAIL_LIMIT_EXCEEDED -> {
-                        JOptionPane.showMessageDialog(null, "❌ 대출 불가: 등급별 대출 권수 한도를 초과했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "대출 불가: 등급별 대출 권수 한도를 초과했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }

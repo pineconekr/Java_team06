@@ -11,13 +11,14 @@ import java.awt.*;
 // 도서 반납 화면
 public class ReturnUI extends JPanel {
 
-    private final ReturnSvc svc = new ReturnSvc();
+    private final ReturnSvc svc;
 
     private final JTextField loanIdField = new JTextField(12);
     private final JTextField isbnField   = new JTextField(20);
     private final JTextArea  resultArea  = new JTextArea(10, 40);
 
-    public ReturnUI() {
+    public ReturnUI(ReturnSvc svc) {
+        this.svc = svc;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         add(buildInputPanel(), BorderLayout.NORTH);
@@ -82,13 +83,13 @@ public class ReturnUI extends JPanel {
         StringBuilder sb = new StringBuilder();
         switch (info.result) {
             case SUCCESS -> {
-                sb.append("✔ 반납 완료\n");
+                sb.append("[완료] 반납 완료\n");
                 sb.append("대출 ID : ").append(info.loan.getLoanId()).append("\n");
                 sb.append("ISBN    : ").append(info.loan.getIsbn()).append("\n");
                 sb.append("반납일  : ").append(info.loan.getReturnDate()).append("\n");
             }
             case SUCCESS_PENALTY -> {
-                sb.append("✔ 반납 완료 (연체 패널티 적용)\n");
+                sb.append("[완료] 반납 완료 (연체 패널티 적용)\n");
                 sb.append("대출 ID   : ").append(info.loan.getLoanId()).append("\n");
                 sb.append("ISBN      : ").append(info.loan.getIsbn()).append("\n");
                 sb.append("반납일    : ").append(info.loan.getReturnDate()).append("\n");
@@ -97,12 +98,12 @@ public class ReturnUI extends JPanel {
                 sb.append("대출 정지  : ").append(info.penaltyDays).append("일\n");
                 sb.append("정지 해제일: ").append(info.suspendedUntil).append("\n");
                 JOptionPane.showMessageDialog(this,
-                        String.format("연체 %d일 → %d일 대출 정지\n정지 해제일: %s",
+                        String.format("연체 %d일 -> %d일 대출 정지\n정지 해제일: %s",
                                 info.overdueDays, info.penaltyDays, info.suspendedUntil),
                         "연체 패널티", JOptionPane.WARNING_MESSAGE);
             }
-            case LOAN_NOT_FOUND    -> sb.append("✗ 해당 대출 기록을 찾을 수 없습니다.\n");
-            case ALREADY_RETURNED  -> sb.append("✗ 이미 반납된 도서입니다.\n");
+            case LOAN_NOT_FOUND    -> sb.append("[실패] 해당 대출 기록을 찾을 수 없습니다.\n");
+            case ALREADY_RETURNED  -> sb.append("[실패] 이미 반납된 도서입니다.\n");
         }
         resultArea.setText(sb.toString());
     }

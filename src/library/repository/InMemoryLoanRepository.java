@@ -15,7 +15,10 @@ public class InMemoryLoanRepository implements ILoanRepository {
 
     public static InMemoryLoanRepository getInstance() { return INSTANCE; }
 
-    @Override public void save(Loan l) { loans.add(l); }
+    @Override public void save(Loan l) {
+        loans.removeIf(x -> x.getLoanId() == l.getLoanId()); // 같은 id 있으면 교체(upsert)
+        loans.add(l);
+    }
     @Override public Optional<Loan> findById(int id) { return loans.stream().filter(l -> l.getLoanId() == id).findFirst(); }
     @Override public List<Loan> findByMemberId(String id) { return loans.stream().filter(l -> l.getMemberId().equals(id)).collect(Collectors.toList()); }
     @Override public List<Loan> findActiveLoansByMemberId(String id) { return loans.stream().filter(l -> l.getMemberId().equals(id) && !l.isReturned()).collect(Collectors.toList()); }

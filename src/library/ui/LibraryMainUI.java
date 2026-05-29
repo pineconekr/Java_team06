@@ -1,17 +1,23 @@
-//수정중...
 package library.ui;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 import library.service.BorrowSvc;
+import library.service.SearchSvc;
+import library.service.ReturnSvc;
+import library.service.HistorySvc;
+import library.service.BookAdminSvc;
 
 public class LibraryMainUI extends JFrame {
 
     private BorrowSvc borrowSvc;
-    private boolean isAdminLoggedIn = false;  // 🔒 관리자 로그인 상태
-    private boolean isStudentLoggedIn = false; // 🔓 학생 로그인 상태
+    private SearchSvc searchSvc;
+    private ReturnSvc returnSvc;
+    private HistorySvc historySvc;
+    private BookAdminSvc adminSvc;
+    private boolean isAdminLoggedIn = false;   // 관리자 로그인 상태
+    private boolean isStudentLoggedIn = false;  // 학생 로그인 상태
 
     // 멤버 변수 선언
     private JButton btnCreate;
@@ -20,12 +26,17 @@ public class LibraryMainUI extends JFrame {
     private JButton btnAdminLogin;   // 2. 관리자 로그인 버튼
     private JButton btnRegister;     // 3. 회원가입 버튼
 
-    public LibraryMainUI(BorrowSvc borrowSvc) {
+    public LibraryMainUI(BorrowSvc borrowSvc, SearchSvc searchSvc, ReturnSvc returnSvc,
+                         HistorySvc historySvc, BookAdminSvc adminSvc) {
         this.borrowSvc = borrowSvc;
+        this.searchSvc = searchSvc;
+        this.returnSvc = returnSvc;
+        this.historySvc = historySvc;
+        this.adminSvc = adminSvc;
 
         setTitle("도서관 관리 시스템 v2.0");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 600); // 3개 버튼 배치를 위해 가로폭 1000 유지
+        setSize(1000, 600);
         setLocationRelativeTo(null);
 
         Container c = getContentPane();
@@ -64,7 +75,7 @@ public class LibraryMainUI extends JFrame {
         btnStudentLogin.setFocusPainted(false);
         btnStudentLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // [버튼 2] 관리자 로그인 (요청하신 명칭으로 수정 완료)
+        // [버튼 2] 관리자 로그인
         btnAdminLogin = new JButton("관리자 로그인");
         btnAdminLogin.setBackground(new Color(225, 230, 235));
         btnAdminLogin.setForeground(new Color(15, 37, 61));
@@ -95,16 +106,18 @@ public class LibraryMainUI extends JFrame {
         mainContentPanel.setOpaque(false);
         mainContentPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
 
-        JPanel row1 = new JPanel(new GridLayout(1, 3, 25, 0));
+        JPanel row1 = new JPanel(new GridLayout(1, 4, 25, 0));
         row1.setOpaque(false);
 
-        JButton btnBorrow = createCoolButton("📖", "도서 대출", new Color(33, 102, 224));
-        JButton btnReturn = createCoolButton("↩", "도서 반납", new Color(0, 147, 171));
-        JButton btnSearch = createCoolButton("🔍", "도서 검색", new Color(123, 31, 230));
+        JButton btnBorrow  = createCoolButton("도서 대출", new Color(33, 102, 224));
+        JButton btnReturn  = createCoolButton("도서 반납", new Color(0, 147, 171));
+        JButton btnSearch  = createCoolButton("도서 검색", new Color(123, 31, 230));
+        JButton btnHistory = createCoolButton("대출 이력", new Color(190, 80, 30));
 
         row1.add(btnBorrow);
         row1.add(btnReturn);
         row1.add(btnSearch);
+        row1.add(btnHistory);
 
         JPanel row2Wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 25));
         row2Wrapper.setOpaque(false);
@@ -113,8 +126,8 @@ public class LibraryMainUI extends JFrame {
         row2.setPreferredSize(new Dimension(580, 150));
         row2.setOpaque(false);
 
-        btnCreate = createCoolButton("➕", "도서 등록 (사서)", new Color(15, 157, 88));
-        btnUpdate = createCoolButton("📝", "도서 정보 수정/삭제 (사서)", new Color(214, 115, 0));
+        btnCreate = createCoolButton("도서 등록 (사서)", new Color(15, 157, 88));
+        btnUpdate = createCoolButton("도서 정보 수정/삭제 (사서)", new Color(214, 115, 0));
 
         row2.add(btnCreate);
         row2.add(btnUpdate);
@@ -138,12 +151,12 @@ public class LibraryMainUI extends JFrame {
                     String studentId = JOptionPane.showInputDialog(null, "학번(ID)을 입력하세요", "학생 로그인", JOptionPane.QUESTION_MESSAGE);
                     if (studentId != null && !studentId.trim().isEmpty()) {
                         isStudentLoggedIn = true;
-                        JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + studentId + "] 님 환영합니다.");
+                        JOptionPane.showMessageDialog(null, "학생 인증 성공: [" + studentId + "] 님 환영합니다.");
                         btnStudentLogin.setText("학생 로그아웃");
                     }
                 } else {
                     isStudentLoggedIn = false;
-                    JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
+                    JOptionPane.showMessageDialog(null, "로그아웃 되었습니다.");
                     btnStudentLogin.setText("학생 로그인");
                 }
             }
@@ -157,13 +170,13 @@ public class LibraryMainUI extends JFrame {
                     String adminId = JOptionPane.showInputDialog(null, "관리자 ID를 입력하세요 (테스트: admin)", "관리자 로그인", JOptionPane.QUESTION_MESSAGE);
                     if ("admin".equals(adminId)) {
                         isAdminLoggedIn = true;
-                        JOptionPane.showMessageDialog(null, "🔓 관리자 권한이 활성화되었습니다. 하단의 [사서 전용] 메뉴가 열립니다.");
+                        JOptionPane.showMessageDialog(null, "관리자 권한이 활성화되었습니다. 하단의 [사서 전용] 메뉴가 열립니다.");
                     } else if (adminId != null) {
-                        JOptionPane.showMessageDialog(null, "❌ 잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
                     isAdminLoggedIn = false;
-                    JOptionPane.showMessageDialog(null, "🔒 관리자 기능이 잠깁니다.");
+                    JOptionPane.showMessageDialog(null, "관리자 기능이 잠깁니다.");
                 }
                 updateAuthorityUI();
             }
@@ -185,46 +198,37 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
-        // 기능 미구현 뼈대 리스너
-        ActionListener dummyListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JButton srcBtn = (JButton) e.getSource();
-                String text = srcBtn.getText().replaceAll("<[^>]*>", "").replaceAll("[0-9⭐\uD83D\uDCD6\u21A9\uD83D\uDD0D➕\uD83D\uDCDD]", "").trim();
-                JOptionPane.showMessageDialog(null, "[" + text + "] 기능은 팀원이 구현 중입니다.");
-            }
-        };
+        // [도서 반납] 버튼 연동 (공용 서비스 주입)
+        btnReturn.addActionListener(e ->
+                openFrame("도서 반납 시스템", 550, 400, new ReturnUI(returnSvc)));
 
-        // [도서 반납] 버튼 연동
-        btnReturn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame returnFrame = new JFrame("도서 반납 시스템");
-                returnFrame.setSize(550, 400);
-                returnFrame.setLocationRelativeTo(null);
-                returnFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                returnFrame.add(new ReturnUI());
-                returnFrame.setVisible(true);
-            }
-        });
+        // [도서 검색] 버튼 연동 (로컬 우선 + 결과 없으면 국립중앙도서관 API 폴백)
+        btnSearch.addActionListener(e ->
+                openFrame("도서 검색 시스템", 650, 450, new SearchUI(searchSvc, adminSvc)));
 
-        // [도서 검색] 버튼 연동
-        btnSearch.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame searchFrame = new JFrame("도서 검색 시스템");
-                searchFrame.setSize(650, 450);
-                searchFrame.setLocationRelativeTo(null);
-                searchFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                searchFrame.add(new SearchUI());
-                searchFrame.setVisible(true);
-            }
-        });
+        // [대출 이력] 버튼 연동
+        btnHistory.addActionListener(e ->
+                openFrame("대출 이력 조회", 780, 480, new HistoryUI(historySvc)));
 
-        btnCreate.addActionListener(dummyListener);
-        btnUpdate.addActionListener(dummyListener);
+        // [도서 등록 / 수정.삭제] 버튼 - 둘 다 사서 관리 화면(등록.수정.삭제.API 수집)으로 연결
+        btnCreate.addActionListener(e ->
+                openFrame("도서 관리 (사서)", 740, 620, new BookAdminUI(adminSvc)));
+        btnUpdate.addActionListener(e ->
+                openFrame("도서 관리 (사서)", 740, 620, new BookAdminUI(adminSvc)));
 
         setVisible(true);
+    }
+
+    /**
+     * 자식 화면(JPanel)을 별도 창으로 띄우는 공통 헬퍼.
+     */
+    private void openFrame(String title, int width, int height, JComponent content) {
+        JFrame frame = new JFrame(title);
+        frame.setSize(width, height);
+        frame.setLocationRelativeTo(this);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.add(content);
+        frame.setVisible(true);
     }
 
     /**
@@ -247,11 +251,10 @@ public class LibraryMainUI extends JFrame {
     }
 
     /**
-     * 버튼 스타일 팩토리 메서드
+     * 버튼 스타일 팩토리 메서드 (텍스트 전용 카드 버튼)
      */
-    private JButton createCoolButton(String icon, String title, Color pointColor) {
-        String htmlText = "<html><center><font size='6' color='" + String.format("#%02x%02x%02x", pointColor.getRed(), pointColor.getGreen(), pointColor.getBlue()) + "'>" + icon + "</font><br><br>"
-                + "<font size='4' color='#2C3E50'><b>" + title + "</b></font></center></html>";
+    private JButton createCoolButton(String title, Color pointColor) {
+        String htmlText = "<html><center><font size='5' color='#2C3E50'><b>" + title + "</b></font></center></html>";
 
         JButton button = new JButton(htmlText) {
             @Override
