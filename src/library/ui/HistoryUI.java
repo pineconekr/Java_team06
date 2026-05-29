@@ -64,15 +64,18 @@ public class HistoryUI extends JPanel {
 
     private void search() {
         String memberId = memberIdField.getText().trim();
-        if (memberId.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "회원 ID를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
 
         List<Loan> loans;
-        if (activeBtn.isSelected())       loans = svc.getActive(memberId);
-        else if (overdueBtn.isSelected()) loans = svc.getOverdue();
-        else                              loans = svc.getHistory(memberId);
+        if (overdueBtn.isSelected()) {
+            // 연체 전체 조회는 회원 ID가 필요 없다.
+            loans = svc.getOverdue();
+        } else {
+            if (memberId.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "회원 ID를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            loans = activeBtn.isSelected() ? svc.getActive(memberId) : svc.getHistory(memberId);
+        }
 
         tableModel.setRowCount(0);
         for (Loan loan : loans) {
