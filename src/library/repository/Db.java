@@ -7,12 +7,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 
-/**
- * SQLite 연결 + 스키마 초기화 + 최초 1회 시드 데이터 적재를 담당한다.
- * 의존성: lib/sqlite-jdbc-*.jar
- *
- * 단일 사용자 데스크톱 앱이므로 메서드마다 연결을 열고 닫는다(파일 DB라 비용 작음).
- */
 public class Db {
 
     private final String url;
@@ -30,6 +24,8 @@ public class Db {
     private void initSchema() {
         try (Connection c = getConnection(); Statement s = c.createStatement()) {
             s.execute("PRAGMA foreign_keys = ON");
+
+            // 1. 도서 테이블
             s.execute("""
                 CREATE TABLE IF NOT EXISTS books (
                     isbn     TEXT PRIMARY KEY,
@@ -38,14 +34,18 @@ public class Db {
                     category TEXT,
                     status   TEXT NOT NULL DEFAULT 'AVAILABLE'
                 )""");
+
+            // 2. 회원 테이블 (기존 로직 유지 및 확장 가능)
             s.execute("""
                 CREATE TABLE IF NOT EXISTS members (
                     member_id       TEXT PRIMARY KEY,
                     name            TEXT NOT NULL,
-                    grade           TEXT NOT NULL DEFAULT 'REGULAR',
-                    borrow_count    INTEGER NOT NULL DEFAULT 0,
+                    grade           TEXT NOT NULL,
+                    borrow_count    INTEGER DEFAULT 0,
                     suspended_until TEXT
                 )""");
+
+            // 3. 대출 테이블
             s.execute("""
                 CREATE TABLE IF NOT EXISTS loans (
                     loan_id     INTEGER PRIMARY KEY,
@@ -53,25 +53,28 @@ public class Db {
                     isbn        TEXT NOT NULL,
                     borrow_date TEXT NOT NULL,
                     due_date    TEXT NOT NULL,
-                    return_date TEXT
+                    return_date TEXT,
+                    FOREIGN KEY(member_id) REFERENCES members(member_id),
+                    FOREIGN KEY(isbn) REFERENCES books(isbn)
                 )""");
         } catch (SQLException e) {
             throw new RuntimeException("DB 스키마 초기화 실패: " + e.getMessage(), e);
         }
     }
 
-    /** 테이블이 비어 있을 때만 데모용 초기 데이터를 넣는다(기존 인메모리 시드와 동일). */
     private void seedIfEmpty() {
         try (Connection c = getConnection()) {
+            // 도서 데이터 초기화
             if (isEmpty(c, "books")) {
                 try (Statement s = c.createStatement()) {
-                    // book1, book2는 시드 대출과 맞춰 BORROWED 상태로 둔다.
                     s.execute("INSERT INTO books VALUES "
                             + "('978-0-06-112008-4','앵무새 죽이기','하퍼 리','소설','BORROWED'),"
                             + "('978-0-7432-7356-5','1984','조지 오웰','소설','BORROWED'),"
                             + "('978-0-345-80301-8','클린 코드','로버트 마틴','IT','AVAILABLE')");
                 }
             }
+
+            // 회원 데이터 초기화
             if (isEmpty(c, "members")) {
                 try (Statement s = c.createStatement()) {
                     s.execute("INSERT INTO members VALUES "
@@ -80,6 +83,8 @@ public class Db {
                             + "('M003','박민준','REGULAR',0,NULL)");
                 }
             }
+
+            // 대출 데이터 초기화
             if (isEmpty(c, "loans")) {
                 String today = LocalDate.now().toString();
                 String due = LocalDate.now().plusDays(14).toString();
@@ -90,13 +95,13 @@ public class Db {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("DB 시드 적재 실패: " + e.getMessage(), e);
+            throw new RuntimeException("DB 시드 데이터 적재 실패: " + e.getMessage(), e);
         }
     }
 
-    private boolean isEmpty(Connection c, String table) throws SQLException {
+    private boolean isEmpty(Connection c, String tableName) throws SQLException {
         try (Statement s = c.createStatement();
-             ResultSet r = s.executeQuery("SELECT COUNT(*) FROM " + table)) {
+             ResultSet r = s.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
             return r.next() && r.getInt(1) == 0;
         }
     }
