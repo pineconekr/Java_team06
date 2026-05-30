@@ -1,20 +1,36 @@
-package library;
+package library; //필수
 
-import library.repository.*;
 import library.service.BorrowSvc;
+import library.service.BookAdminSvc;
 import library.ui.LibraryMainUI;
+import javax.swing.SwingUtilities;
+
+import library.repository.InMemoryBookRepository;
+import library.repository.InMemoryMemberRepository;
+import library.repository.InMemoryLoanRepository;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. 싱글톤(Singleton) 패턴 기반의 리포지토리 객체 로드
-        IBookRepository bookRepo = InMemoryBookRepository.getInstance();
-        IMemberRepository memberRepo = InMemoryMemberRepository.getInstance();
-        ILoanRepository loanRepo = InMemoryLoanRepository.getInstance();
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // 1. 필요한 저장소(Repository) 객체들 준비
+                InMemoryBookRepository bookRepo = InMemoryBookRepository.getInstance();
+                InMemoryMemberRepository memberRepo = InMemoryMemberRepository.getInstance();
+                InMemoryLoanRepository loanRepo = InMemoryLoanRepository.getInstance();
 
-        // 2. 비즈니스 로직 처리를 위한 서비스 계층 생성 및 의존성 주입(DI)
-        BorrowSvc borrowSvc = new BorrowSvc(bookRepo, memberRepo, loanRepo);
+                // 2. 대출 서비스 생성
+                BorrowSvc borrowSvc = new BorrowSvc(bookRepo, memberRepo, loanRepo);
 
-        // 3. 서비스 객체들을 메인 UI 컨테이너에 전달하며 프로그램 실행
-        new LibraryMainUI(borrowSvc);
+                // 3. 관리자 서비스 생성
+                BookAdminSvc bookAdminSvc = new BookAdminSvc();
+
+                // 4. 메인 UI 창 띄우기
+                new LibraryMainUI(borrowSvc, bookAdminSvc);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("프로그램 실행 중 오류가 발생했습니다.");
+            }
+        });
     }
 }
