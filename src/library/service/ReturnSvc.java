@@ -69,9 +69,13 @@ public class ReturnSvc {
 
         LocalDate today = LocalDate.now();
         loan.setReturnDate(today);
+        loanRepo.save(loan); // 반납일 변경을 저장소에 반영(write-through, upsert)
 
         bookRepo.findByIsbn(loan.getIsbn())
-                .ifPresent(book -> book.setStatus(BookStatus.AVAILABLE));
+                .ifPresent(book -> {
+                    book.setStatus(BookStatus.AVAILABLE);
+                    bookRepo.add(book); // 도서 상태 변경 반영
+                });
 
         Optional<Member> memberOpt = memberRepo.findById(loan.getMemberId());
         if (memberOpt.isEmpty())
@@ -87,10 +91,12 @@ public class ReturnSvc {
             LocalDate base = member.isSuspended() ? member.getSuspendedUntil() : today;
             LocalDate suspendedUntil = base.plusDays(penaltyDays);
             member.setSuspendedUntil(suspendedUntil);
+            memberRepo.add(member); // 대출 권수 감소 + 정지일 반영
             return new ReturnInfo(ReturnResult.SUCCESS_PENALTY, loan,
                     overdueDays, penaltyDays, suspendedUntil);
         }
 
+        memberRepo.add(member); // 대출 권수 감소 반영
         return new ReturnInfo(ReturnResult.SUCCESS, loan, 0, 0, null);
     }
 

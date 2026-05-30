@@ -12,7 +12,7 @@ import java.util.List;
 // 대출 이력 조회 화면
 public class HistoryUI extends JPanel {
 
-    private final HistorySvc svc = new HistorySvc();
+    private final HistorySvc svc;
 
     private final JTextField memberIdField = new JTextField(15);
     private final JRadioButton allBtn      = new JRadioButton("전체", true);
@@ -25,7 +25,8 @@ public class HistoryUI extends JPanel {
     };
     private final JTable table = new JTable(tableModel);
 
-    public HistoryUI() {
+    public HistoryUI(HistorySvc svc) {
+        this.svc = svc;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         add(buildSearchPanel(), BorderLayout.NORTH);
@@ -63,15 +64,18 @@ public class HistoryUI extends JPanel {
 
     private void search() {
         String memberId = memberIdField.getText().trim();
-        if (memberId.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "회원 ID를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
 
         List<Loan> loans;
-        if (activeBtn.isSelected())       loans = svc.getActive(memberId);
-        else if (overdueBtn.isSelected()) loans = svc.getOverdue();
-        else                              loans = svc.getHistory(memberId);
+        if (overdueBtn.isSelected()) {
+            // 연체 전체 조회는 회원 ID가 필요 없다.
+            loans = svc.getOverdue();
+        } else {
+            if (memberId.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "회원 ID를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            loans = activeBtn.isSelected() ? svc.getActive(memberId) : svc.getHistory(memberId);
+        }
 
         tableModel.setRowCount(0);
         for (Loan loan : loans) {

@@ -13,6 +13,21 @@ public class Loan {
         this.borrowDate = LocalDate.now();
         this.dueDate = borrowDate.plusDays(LOAN_PERIOD_DAYS);
     }
+
+    // DB 복원용: 저장된 값을 그대로 사용한다(카운터를 쓰지 않음).
+    public Loan(int loanId, String memberId, String isbn,
+                LocalDate borrowDate, LocalDate dueDate, LocalDate returnDate) {
+        this.loanId = loanId;
+        this.memberId = memberId; this.isbn = isbn;
+        this.borrowDate = borrowDate;
+        this.dueDate = dueDate;
+        this.returnDate = returnDate;
+    }
+
+    /** DB의 기존 최대 loanId 이후로 신규 발급 카운터를 맞춰 id 충돌을 방지한다. */
+    public static void syncIdCounter(int maxExistingId) {
+        if (maxExistingId >= idCounter) idCounter = maxExistingId + 1;
+    }
     public int getLoanId()           { return loanId; }
     public String getMemberId()      { return memberId; }
     public String getIsbn()          { return isbn; }

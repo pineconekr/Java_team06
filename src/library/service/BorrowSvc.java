@@ -68,9 +68,14 @@ public class BorrowSvc {
             return BorrowResult.FAIL_NOT_AVAILABLE; // 도서가 없거나 이미 대출 중인 경우
         }
 
-        // 5. 검증 완료 후 객체 상태 업데이트 (세터 지정 시 메모리에 자동 반영)
+        // 5. 검증 완료 후 객체 상태 업데이트
         book.setStatus(BookStatus.BORROWED); // 도서 상태를 대출 중으로 변경
         member.setCurrentBorrowCount(member.getCurrentBorrowCount() + 1); // 회원의 대출 권수 +1
+
+        // 5-1. 변경된 상태를 저장소에 반영(write-through).
+        //      인메모리는 같은 객체라 무해, DB 저장소는 이 호출로 영구 반영된다.
+        bookRepo.add(book);
+        memberRepo.add(member);
 
         // 6. 대출 장부(Loan) 생성 및 기록 저장
         // memberid , isbn사용
