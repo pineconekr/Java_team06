@@ -19,4 +19,5 @@ public class InMemoryBookRepository implements IBookRepository {
     @Override public boolean delete(String isbn) { return books.remove(isbn) != null; }
     @Override public Optional<Book> findByIsbn(String isbn) { return Optional.ofNullable(books.get(isbn)); }
     @Override public List<Book> findAll() { return new ArrayList<>(books.values()); }
+     @Override public boolean delete(String isbn) {return books.remove(isbn) != null; } // 고친코드
 }
