@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class LibraryAPICollector {
 
-    private static final String API_KEY = EnvConfig.get("NL_API_KEY", "");
+    private static final String API_KEY = EnvConfig.get("NL_API_KEY", "9c06cbb36626064469f6a6c10a387d8f1b64d1ee22498feafc2a3063cf6bb3d9");
     private static final String API_URL = "https://www.nl.go.kr/NL/search/openApi/search.do";
 
     public List<Book> collect(String keyword) {
