@@ -3,6 +3,9 @@ package library.ui;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import library.model.Member;
+import library.model.MemberGrade;
+import library.repository.IMemberRepository;
 import library.service.BorrowSvc;
 import library.service.SearchSvc;
 import library.service.ReturnSvc;
@@ -16,6 +19,7 @@ public class LibraryMainUI extends JFrame {
     private ReturnSvc returnSvc;
     private HistorySvc historySvc;
     private BookAdminSvc adminSvc;
+    private IMemberRepository memberRepo;
 
     private boolean isAdminLoggedIn = false;     // 관리자(사서) 로그인 상태
     private boolean isStudentLoggedIn = false;    // 학생 로그인 상태
@@ -32,12 +36,13 @@ public class LibraryMainUI extends JFrame {
     private JButton btnUpdate;    // 사서 전용
 
     public LibraryMainUI(BorrowSvc borrowSvc, SearchSvc searchSvc, ReturnSvc returnSvc,
-                         HistorySvc historySvc, BookAdminSvc adminSvc) {
-        this.borrowSvc = borrowSvc;
-        this.searchSvc = searchSvc;
-        this.returnSvc = returnSvc;
+                         HistorySvc historySvc, BookAdminSvc adminSvc, IMemberRepository memberRepo) {
+        this.borrowSvc  = borrowSvc;
+        this.searchSvc  = searchSvc;
+        this.returnSvc  = returnSvc;
         this.historySvc = historySvc;
-        this.adminSvc = adminSvc;
+        this.adminSvc   = adminSvc;
+        this.memberRepo = memberRepo;
 
         setTitle("도서관 관리 시스템 v2.0");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -207,8 +212,7 @@ public class LibraryMainUI extends JFrame {
         });
 
         // [회원가입]
-        btnRegister.addActionListener(e ->
-                JOptionPane.showMessageDialog(null, "신규 회원가입 창을 구동합니다.", "회원가입", JOptionPane.INFORMATION_MESSAGE));
+        btnRegister.addActionListener(e -> showRegisterDialog());
 
         // [내 대출현황] - 학생 본인 ID 고정, 읽기 전용
         btnMyLoans.addActionListener(e -> {
@@ -230,6 +234,46 @@ public class LibraryMainUI extends JFrame {
                 openFrame("도서 관리 (사서)", 740, 620, new BookAdminUI(adminSvc)));
         btnUpdate.addActionListener(e ->
                 openFrame("도서 관리 (사서)", 740, 620, new BookAdminUI(adminSvc)));
+    }
+
+    /** 회원가입 입력 다이얼로그 */
+    private void showRegisterDialog() {
+        JTextField idField   = new JTextField(15);
+        JTextField nameField = new JTextField(15);
+        JComboBox<String> gradeBox = new JComboBox<>(new String[]{"일반 (REGULAR, 3권)", "프리미엄 (PREMIUM, 5권)"});
+
+        JPanel panel = new JPanel(new GridLayout(3, 2, 8, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        panel.add(new JLabel("회원 ID :"));   panel.add(idField);
+        panel.add(new JLabel("이름 :"));      panel.add(nameField);
+        panel.add(new JLabel("등급 :"));      panel.add(gradeBox);
+
+        int result = JOptionPane.showConfirmDialog(
+                this, panel, "신규 회원가입",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+        if (result != JOptionPane.OK_OPTION) return;
+
+        String id   = idField.getText().trim();
+        String name = nameField.getText().trim();
+
+        if (id.isEmpty() || name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "회원 ID와 이름은 필수입니다.", "입력 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (memberRepo.findById(id).isPresent()) {
+            JOptionPane.showMessageDialog(this, "이미 존재하는 회원 ID입니다.", "중복 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Member member = new Member(id, name);
+        member.setGrade(gradeBox.getSelectedIndex() == 1 ? MemberGrade.PREMIUM : MemberGrade.REGULAR);
+        memberRepo.add(member);
+
+        JOptionPane.showMessageDialog(this,
+                "회원가입 완료!\nID: " + id + " / 이름: " + name
+                        + " / 등급: " + member.getGrade(),
+                "가입 완료", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /** 자식 화면(JPanel)을 별도 창으로 띄우는 공통 헬퍼. */
