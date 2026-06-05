@@ -24,6 +24,7 @@ public class LibraryMainUI extends JFrame {
 
     private boolean isAdminLoggedIn = false;  // 🔒 관리자 로그인 상태
     private boolean isStudentLoggedIn = false; // 🔓 학생 로그인 상태
+    private String loggedInStudentId = null;   // 로그인한 학생 ID(내 대출현황 조회용)
 
     // 멤버 변수 선언
     private JButton btnCreate;
@@ -31,6 +32,8 @@ public class LibraryMainUI extends JFrame {
     private JButton btnStudentLogin;
     private JButton btnAdminLogin;
     private JButton btnRegister;
+    private JButton btnMyLoans;   // 학생 전용: 내 대출현황
+    private JButton btnHistory;   // 사서 전용: 대출 이력 / 연체
 
     // 🌟 1. 팀원들의 Main.java 규격에 맞춘 6개짜리 생성자
     public LibraryMainUI(BorrowSvc borrowSvc, SearchSvc searchSvc, ReturnSvc returnSvc,
@@ -111,29 +114,33 @@ public class LibraryMainUI extends JFrame {
         mainContentPanel.setOpaque(false);
         mainContentPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
 
-        JPanel row1 = new JPanel(new GridLayout(1, 3, 25, 0));
+        JPanel row1 = new JPanel(new GridLayout(1, 4, 25, 0));
         row1.setOpaque(false);
 
         JButton btnBorrow = createCoolButton("📖", "도서 대출", new Color(33, 102, 224));
         JButton btnReturn = createCoolButton("↩", "도서 반납", new Color(0, 147, 171));
         JButton btnSearch = createCoolButton("🔍", "도서 검색", new Color(123, 31, 230));
+        btnMyLoans = createCoolButton("🧾", "내 대출현황", new Color(0, 120, 140));
 
         row1.add(btnBorrow);
         row1.add(btnReturn);
         row1.add(btnSearch);
+        row1.add(btnMyLoans);
 
         JPanel row2Wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 25));
         row2Wrapper.setOpaque(false);
 
-        JPanel row2 = new JPanel(new GridLayout(1, 2, 25, 0));
-        row2.setPreferredSize(new Dimension(580, 150));
+        JPanel row2 = new JPanel(new GridLayout(1, 3, 25, 0));
+        row2.setPreferredSize(new Dimension(880, 150));
         row2.setOpaque(false);
 
         btnCreate = createCoolButton("➕", "도서 등록 (사서)", new Color(15, 157, 88));
         btnUpdate = createCoolButton("📝", "도서 정보 수정/삭제 (사서)", new Color(214, 115, 0));
+        btnHistory = createCoolButton("📋", "대출 이력 / 연체 (사서)", new Color(190, 80, 30));
 
         row2.add(btnCreate);
         row2.add(btnUpdate);
+        row2.add(btnHistory);
         row2Wrapper.add(row2);
 
         mainContentPanel.add(row1);
@@ -153,14 +160,17 @@ public class LibraryMainUI extends JFrame {
                     String studentId = JOptionPane.showInputDialog(null, "학번(ID)을 입력하세요", "학생 로그인", JOptionPane.QUESTION_MESSAGE);
                     if (studentId != null && !studentId.trim().isEmpty()) {
                         isStudentLoggedIn = true;
+                        loggedInStudentId = studentId.trim();
                         JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + studentId + "] 님 환영합니다.");
                         btnStudentLogin.setText("학생 로그아웃");
                     }
                 } else {
                     isStudentLoggedIn = false;
+                    loggedInStudentId = null;
                     JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
                     btnStudentLogin.setText("학생 로그인");
                 }
+                updateAuthorityUI();
             }
         });
 
@@ -254,23 +264,55 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
+        // 🌟 [내 대출현황] - 학생 본인 ID 고정, 읽기 전용
+        btnMyLoans.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (loggedInStudentId == null) {
+                    JOptionPane.showMessageDialog(null, "학생 로그인 후 사용 가능합니다.", "알림", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                JFrame f = new JFrame("내 대출현황 - " + loggedInStudentId);
+                f.setSize(760, 480);
+                f.setLocationRelativeTo(null);
+                f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                f.add(new MyLoansUI(historySvc, loggedInStudentId));
+                f.setVisible(true);
+            }
+        });
+
+        // 🌟 [대출 이력 / 연체] - 사서 전용(전체 회원 조회)
+        btnHistory.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFrame f = new JFrame("대출 이력 / 연체 조회 (사서)");
+                f.setSize(780, 480);
+                f.setLocationRelativeTo(null);
+                f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                f.add(new HistoryUI(historySvc));
+                f.setVisible(true);
+            }
+        });
+
         setVisible(true);
     }
 
     private void updateAuthorityUI() {
-        if (isAdminLoggedIn) {
-            btnAdminLogin.setText("관리자 로그아웃");
-            btnCreate.setEnabled(true);
-            btnUpdate.setEnabled(true);
-            btnCreate.setToolTipText("도서 등록이 가능합니다.");
-            btnUpdate.setToolTipText("도서 수정 및 삭제가 가능합니다.");
-        } else {
-            btnAdminLogin.setText("관리자 로그인");
-            btnCreate.setEnabled(false);
-            btnUpdate.setEnabled(false);
-            btnCreate.setToolTipText("관리자 로그인 후 사용 가능한 기능입니다.");
-            btnUpdate.setToolTipText("관리자 로그인 후 사용 가능한 기능입니다.");
-        }
+        // 사서 전용: 등록/수정/대출이력
+        boolean staff = isAdminLoggedIn;
+        btnAdminLogin.setText(staff ? "관리자 로그아웃" : "관리자 로그인");
+        btnCreate.setEnabled(staff);
+        btnUpdate.setEnabled(staff);
+        btnHistory.setEnabled(staff);
+        String staffTip = staff ? null : "관리자 로그인 후 사용 가능한 기능입니다.";
+        btnCreate.setToolTipText(staff ? "도서 등록이 가능합니다." : staffTip);
+        btnUpdate.setToolTipText(staff ? "도서 수정 및 삭제가 가능합니다." : staffTip);
+        btnHistory.setToolTipText(staff ? "전체 대출 이력/연체를 조회합니다." : staffTip);
+
+        // 학생 전용: 내 대출현황
+        btnMyLoans.setEnabled(isStudentLoggedIn);
+        btnMyLoans.setToolTipText(isStudentLoggedIn
+                ? "내 대출/연체 현황을 봅니다." : "학생 로그인 후 사용 가능합니다.");
     }
 
     private JButton createCoolButton(String icon, String title, Color pointColor) {
