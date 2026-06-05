@@ -1,36 +1,52 @@
 package library.ui;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.*;
 
+// 필요한 서비스와 저장소 임포트
 import library.service.BookAdminSvc;
 import library.service.BorrowSvc;
+import library.service.HistorySvc;
+import library.service.ReturnSvc;
+import library.service.SearchSvc;
+import library.repository.IMemberRepository;
 
 public class LibraryMainUI extends JFrame {
 
+    // 🌟 팀원들이 만든 서비스 객체들을 담을 변수들
     private BorrowSvc borrowSvc;
+    private SearchSvc searchSvc;
+    private ReturnSvc returnSvc;
+    private HistorySvc historySvc;
     private BookAdminSvc bookAdminSvc;
+    private IMemberRepository memberRepo;
+
     private boolean isAdminLoggedIn = false;  // 🔒 관리자 로그인 상태
     private boolean isStudentLoggedIn = false; // 🔓 학생 로그인 상태
 
     // 멤버 변수 선언
     private JButton btnCreate;
     private JButton btnUpdate;
-    private JButton btnStudentLogin; // 1. 학생 로그인 버튼
-    private JButton btnAdminLogin;   // 2. 관리자 로그인 버튼
-    private JButton btnRegister;     // 3. 회원가입 버튼
+    private JButton btnStudentLogin;
+    private JButton btnAdminLogin;
+    private JButton btnRegister;
 
-    public LibraryMainUI(BorrowSvc borrowSvc, BookAdminSvc bookAdminSvc) {
+    // 🌟 1. 팀원들의 Main.java 규격에 맞춘 6개짜리 생성자
+    public LibraryMainUI(BorrowSvc borrowSvc, SearchSvc searchSvc, ReturnSvc returnSvc,
+                         HistorySvc historySvc, BookAdminSvc bookAdminSvc, IMemberRepository memberRepo) {
+
+        // 넘어온 서비스들을 변수에 저장
         this.borrowSvc = borrowSvc;
+        this.searchSvc = searchSvc;
+        this.returnSvc = returnSvc;
+        this.historySvc = historySvc;
         this.bookAdminSvc = bookAdminSvc;
-
-        setTitle("도서관 관리 시스템 v2.0");
+        this.memberRepo = memberRepo;
 
         setTitle("도서관 관리 시스템 v2.0");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 600); // 3개 버튼 배치를 위해 가로폭 1000 유지
+        setSize(1000, 600);
         setLocationRelativeTo(null);
 
         Container c = getContentPane();
@@ -38,7 +54,7 @@ public class LibraryMainUI extends JFrame {
         c.setBackground(new Color(245, 247, 250));
 
         // =================================================================
-        // 1. 상단 탑바 영역 (네이비 그라데이션 + 로그인 3종 세트)
+        // 2. 상단 탑바 영역 (로그인 버튼 3종)
         // =================================================================
         JPanel topBar = new JPanel(new BorderLayout()) {
             @Override
@@ -57,11 +73,9 @@ public class LibraryMainUI extends JFrame {
         mainTitle.setForeground(Color.WHITE);
         topBar.add(mainTitle, BorderLayout.WEST);
 
-        // 우측 버튼 3개를 담을 패널
         JPanel memberMenuPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         memberMenuPanel.setOpaque(false);
 
-        // [버튼 1] 학생 로그인
         btnStudentLogin = new JButton("학생 로그인");
         btnStudentLogin.setBackground(Color.WHITE);
         btnStudentLogin.setForeground(new Color(15, 37, 61));
@@ -69,7 +83,6 @@ public class LibraryMainUI extends JFrame {
         btnStudentLogin.setFocusPainted(false);
         btnStudentLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // [버튼 2] 관리자 로그인 (요청하신 명칭으로 수정 완료)
         btnAdminLogin = new JButton("관리자 로그인");
         btnAdminLogin.setBackground(new Color(225, 230, 235));
         btnAdminLogin.setForeground(new Color(15, 37, 61));
@@ -77,7 +90,6 @@ public class LibraryMainUI extends JFrame {
         btnAdminLogin.setFocusPainted(false);
         btnAdminLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // [버튼 3] 회원가입
         btnRegister = new JButton("회원가입");
         btnRegister.setBackground(new Color(12, 45, 74));
         btnRegister.setForeground(Color.CYAN);
@@ -85,7 +97,6 @@ public class LibraryMainUI extends JFrame {
         btnRegister.setFocusPainted(false);
         btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // 패널에 버튼 3개 장착
         memberMenuPanel.add(btnStudentLogin);
         memberMenuPanel.add(btnAdminLogin);
         memberMenuPanel.add(btnRegister);
@@ -93,7 +104,7 @@ public class LibraryMainUI extends JFrame {
         c.add(topBar, BorderLayout.NORTH);
 
         // =================================================================
-        // 2. 중앙 메인 버튼 영역 (입체 카드 스타일)
+        // 3. 중앙 메인 메뉴 영역 (아이콘 버튼 5개)
         // =================================================================
         JPanel mainContentPanel = new JPanel();
         mainContentPanel.setLayout(new BoxLayout(mainContentPanel, BoxLayout.Y_AXIS));
@@ -132,10 +143,9 @@ public class LibraryMainUI extends JFrame {
         updateAuthorityUI();
 
         // =================================================================
-        // 3. 컴포넌트 이벤트 리스너 액션 정의
+        // 4. 컴포넌트 이벤트 리스너 (기능 연결)
         // =================================================================
 
-        // [학생 로그인] 버튼 액션
         btnStudentLogin.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -154,7 +164,6 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
-        // [관리자 로그인] 버튼 액션
         btnAdminLogin.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -174,7 +183,6 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
-        // [회원가입] 버튼 액션
         btnRegister.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -182,7 +190,7 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
-        // [도서 대출] 버튼 연동
+        // 🌟 [도서 대출]
         btnBorrow.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -190,17 +198,7 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
-        // 기능 미구현 뼈대 리스너
-        ActionListener dummyListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JButton srcBtn = (JButton) e.getSource();
-                String text = srcBtn.getText().replaceAll("<[^>]*>", "").replaceAll("[0-9⭐\uD83D\uDCD6\u21A9\uD83D\uDD0D➕\uD83D\uDCDD]", "").trim();
-                JOptionPane.showMessageDialog(null, "[" + text + "] 기능은 팀원이 구현 중입니다.");
-            }
-        };
-
-        // [도서 반납] 버튼 연동
+        // 🌟 [도서 반납] - returnSvc, historySvc 연결
         btnReturn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -208,12 +206,13 @@ public class LibraryMainUI extends JFrame {
                 returnFrame.setSize(550, 400);
                 returnFrame.setLocationRelativeTo(null);
                 returnFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                returnFrame.add(new ReturnUI());
+
+                returnFrame.add(new ReturnUI(returnSvc, historySvc));
                 returnFrame.setVisible(true);
             }
         });
 
-        // [도서 검색] 버튼 연동
+        // 🌟 [도서 검색] - searchSvc, bookAdminSvc 연결
         btnSearch.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -221,29 +220,27 @@ public class LibraryMainUI extends JFrame {
                 searchFrame.setSize(650, 450);
                 searchFrame.setLocationRelativeTo(null);
                 searchFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                searchFrame.add(new SearchUI());
+
+                searchFrame.add(new SearchUI(searchSvc, bookAdminSvc));
                 searchFrame.setVisible(true);
             }
         });
 
-        // [도서 등록 (사서)] 버튼 연동
+        // 🌟 [도서 등록 (사서)]
         btnCreate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // 새로운 창(프레임) 만들기
                 JFrame adminFrame = new JFrame("사서 전용 - 도서 관리 시스템");
-                adminFrame.setSize(600, 500); // 폼과 테이블이 다 들어가야 하니 넉넉하게!
-                adminFrame.setLocationRelativeTo(null); // 가운데 띄우기
-                adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // 이 창만 닫히게!
+                adminFrame.setSize(600, 500);
+                adminFrame.setLocationRelativeTo(null);
+                adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-                // BookAdminUI 화면(패널)을 넣고, bookAdminSvc 서비스 넘겨주기
                 adminFrame.add(new BookAdminUI(bookAdminSvc));
-
-                adminFrame.setVisible(true); // 화면 보여주기!
+                adminFrame.setVisible(true);
             }
         });
 
-        // [도서 정보 수정/삭제 (사서)] 버튼 연동
+        // 🌟 [도서 수정/삭제 (사서)]
         btnUpdate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -252,9 +249,7 @@ public class LibraryMainUI extends JFrame {
                 adminFrame.setLocationRelativeTo(null);
                 adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-                // 똑같이 관리자 UI 띄워주기
                 adminFrame.add(new BookAdminUI(bookAdminSvc));
-
                 adminFrame.setVisible(true);
             }
         });
@@ -262,9 +257,6 @@ public class LibraryMainUI extends JFrame {
         setVisible(true);
     }
 
-    /**
-     * 관리자 로그인 상태에 따른 하단 사서 전용 버튼 제어
-     */
     private void updateAuthorityUI() {
         if (isAdminLoggedIn) {
             btnAdminLogin.setText("관리자 로그아웃");
@@ -281,9 +273,6 @@ public class LibraryMainUI extends JFrame {
         }
     }
 
-    /**
-     * 버튼 스타일 팩토리 메서드
-     */
     private JButton createCoolButton(String icon, String title, Color pointColor) {
         String htmlText = "<html><center><font size='6' color='" + String.format("#%02x%02x%02x", pointColor.getRed(), pointColor.getGreen(), pointColor.getBlue()) + "'>" + icon + "</font><br><br>"
                 + "<font size='4' color='#2C3E50'><b>" + title + "</b></font></center></html>";
