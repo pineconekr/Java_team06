@@ -70,12 +70,13 @@ public class LibraryAPICollector {
             for (int i = 0; i < data.length(); i++) {
                 JSONObject obj = data.getJSONObject(i);
                 // 국립중앙도서관 API 실제 필드명: titleInfo / authorInfo / kdcName1s
+                String isbn = normalizeIsbn(obj.optString("isbn"));
                 Book book = new Book(
-                        obj.optString("isbn"),
+                        isbn,
                         stripHtml(obj.optString("titleInfo")),
                         stripHtml(obj.optString("authorInfo")),
-                        obj.optString("kdcName1s")
-                );
+                        obj.optString("kdcName1s"),
+                        null);
                 book.setStatus(BookStatus.AVAILABLE);
                 result.add(book);
             }
@@ -90,4 +91,24 @@ public class LibraryAPICollector {
         if (raw == null) return "";
         return raw.replaceAll("<[^>]*>", "").trim();
     }
+    private String normalizeIsbn(String raw) {
+
+    if (raw == null || raw.isBlank()) {
+        return "";
+    }
+
+    String[] parts =
+            raw.trim().split("\\s+");
+
+    for (String p : parts) {
+
+        p = p.replace("-", "");
+
+        if (p.length() == 13) {
+            return p;
+        }
+    }
+
+    return parts[0].replace("-", "");
+}
 }

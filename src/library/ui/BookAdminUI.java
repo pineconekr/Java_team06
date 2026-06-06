@@ -179,7 +179,7 @@ public class BookAdminUI extends JPanel {
                     "입력 오류", JOptionPane.ERROR_MESSAGE);
             return null;
         }
-        return new Book(isbn, title, author, category);
+        return new Book(isbn, title, author, category, null);
     }
 
     private void clearForm() {

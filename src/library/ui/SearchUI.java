@@ -26,6 +26,7 @@ public class SearchUI extends JPanel {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
     private final JTable table = new JTable(tableModel);
+    private final JLabel coverLabel = new JLabel();
 
     public SearchUI(SearchSvc svc, BookAdminSvc adminSvc) {
         this.svc = svc;
@@ -33,9 +34,21 @@ public class SearchUI extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         add(buildTopPanel(), BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        coverLabel.setHorizontalAlignment(JLabel.CENTER);
+        coverLabel.setPreferredSize(new Dimension(180, 250));
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+        centerPanel.add(coverLabel, BorderLayout.EAST);
+        add(centerPanel, BorderLayout.CENTER);
         statusLabel.setForeground(new Color(33, 102, 224));
         add(statusLabel, BorderLayout.SOUTH);
+        table.getSelectionModel() .addListSelectionListener(e -> {
+
+         if (!e.getValueIsAdjusting()) {
+             showSelectedCover();
+         }
+
+     });
     }
 
     private JPanel buildTopPanel() {
@@ -133,4 +146,68 @@ public class SearchUI extends JPanel {
                     b.getCategory(), b.getStatus()});
         }
     }
+
+    private void showSelectedCover() {
+
+    int row = table.getSelectedRow();
+
+    System.out.println("showSelectedCover 호출");
+
+    if (row < 0){
+        System.out.println("선택된 행 없음");
+        return;
+    }
+
+    String isbn =
+            table.getValueAt(row, 0)
+                 .toString();
+
+    System.out.println("ISBN = " + isbn);
+
+    svc.searchByIsbn(isbn)
+       .stream()
+       .findFirst()
+       .ifPresent(book -> {
+         System.out.println(
+               "coverUrl = "
+               + book.getCoverUrl());
+
+           try {
+
+               if (book.getCoverUrl() == null ||
+                   book.getCoverUrl().isBlank()) {
+
+                   coverLabel.setIcon(null);
+                   return;
+               }
+
+               ImageIcon icon =
+                       new ImageIcon(
+                               new java.net.URL(
+                                       book.getCoverUrl()
+                               )
+                       );
+
+               Image image =
+                       icon.getImage()
+                           .getScaledInstance(
+                                   160,
+                                   220,
+                                   Image.SCALE_SMOOTH
+                           );
+
+               coverLabel.setIcon(
+                       new ImageIcon(image)
+               );
+
+           } catch (Exception ex) {
+
+               coverLabel.setIcon(null);
+
+           }
+
+       });
 }
+}
+
+

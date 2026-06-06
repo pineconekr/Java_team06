@@ -7,6 +7,7 @@ import library.model.Book;
 import library.model.BookStatus;
 import library.repository.IBookRepository;
 import library.repository.InMemoryBookRepository;
+import library.api.NaverBookCoverAPI;
 
 /**
  * 도서 관리자 서비스 (도서 수동 등록 및 국립중앙도서관 OpenAPI 연동 수집)
@@ -58,19 +59,38 @@ public class BookAdminSvc {
         }
 
         List<Book> collectedBooks = apiCollector.collect(keyword);
+        NaverBookCoverAPI coverApi = new NaverBookCoverAPI();
         int successCount = 0;
 
         for (Book book : collectedBooks) {
-            // ISBN이 없는 데이터는 건너뜀 (저장소 키 충돌 방지)
-            if (book.getIsbn() == null || book.getIsbn().trim().isEmpty()) {
-                continue;
-            }
-            // 이미 저장소에 존재하는 ISBN인지 체크하여 중복 등록 방지
-            if (bookRepo.findByIsbn(book.getIsbn()).isEmpty()) {
-                bookRepo.add(book);
-                successCount++;
-            }
-        }
+
+    if (book.getIsbn() == null ||
+        book.getIsbn().trim().isEmpty()) {
+        continue;
+    }
+
+    System.out.println(
+        "네이버 조회 ISBN = "
+        + book.getIsbn()
+    );
+
+    String coverUrl =
+            coverApi.findCover(
+                    book.getIsbn()
+            );
+
+    book.setCoverUrl(coverUrl);
+
+    System.out.println(
+        "표지 URL = "
+        + coverUrl
+    );
+
+    if (bookRepo.findByIsbn(book.getIsbn()).isEmpty()) {
+        bookRepo.add(book);
+        successCount++;
+    }
+}
 
         return successCount;
     }

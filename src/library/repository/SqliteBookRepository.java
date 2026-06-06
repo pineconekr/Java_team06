@@ -25,7 +25,7 @@ public class SqliteBookRepository implements IBookRepository {
 
     @Override
     public void add(Book book) {
-        String sql = "INSERT OR REPLACE INTO books(isbn, title, author, category, status) VALUES(?,?,?,?,?)";
+        String sql = "INSERT OR REPLACE INTO books(isbn, title, author, category, status, cover_url) VALUES(?,?,?,?,?,?)";
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, book.getIsbn());
@@ -33,6 +33,7 @@ public class SqliteBookRepository implements IBookRepository {
             ps.setString(3, book.getAuthor());
             ps.setString(4, book.getCategory());
             ps.setString(5, book.getStatus() == null ? BookStatus.AVAILABLE.name() : book.getStatus().name());
+            ps.setString(6, book.getCoverUrl());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("도서 저장 실패: " + e.getMessage(), e);
@@ -81,7 +82,8 @@ public class SqliteBookRepository implements IBookRepository {
                 r.getString("isbn"),
                 r.getString("title"),
                 r.getString("author"),
-                r.getString("category"));
+                r.getString("category"),
+                r.getString("cover_url"));
         String status = r.getString("status");
         book.setStatus(status == null ? BookStatus.AVAILABLE : BookStatus.valueOf(status));
         return book;

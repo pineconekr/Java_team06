@@ -37,7 +37,8 @@ public class Db {
                     title    TEXT NOT NULL,
                     author   TEXT,
                     category TEXT,
-                    status   TEXT NOT NULL DEFAULT 'AVAILABLE'
+                    status   TEXT NOT NULL DEFAULT 'AVAILABLE',
+                    cover_url TEXT
                 )""");
 
             // 2. 회원 테이블

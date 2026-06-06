@@ -8,9 +8,9 @@ public class InMemoryBookRepository implements IBookRepository {
     private final Map<String, Book> books = new LinkedHashMap<>();
 
     private InMemoryBookRepository() {
-        add(new Book("978-0-06-112008-4", "앵무새 죽이기", "하퍼 리", "소설"));
-        add(new Book("978-0-7432-7356-5", "1984", "조지 오웰", "소설"));
-        add(new Book("978-0-345-80301-8", "클린 코드", "로버트 마틴", "IT"));
+        add(new Book("978-0-06-112008-4", "앵무새 죽이기", "하퍼 리", "소설", null));
+        add(new Book("978-0-7432-7356-5", "1984", "조지 오웰", "소설", null));
+        add(new Book("978-0-345-80301-8", "클린 코드", "로버트 마틴", "IT", null));
     }
 
     public static InMemoryBookRepository getInstance() { return INSTANCE; }
