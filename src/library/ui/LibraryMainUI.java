@@ -14,7 +14,6 @@ import library.repository.IMemberRepository;
 
 public class LibraryMainUI extends JFrame {
 
-    // 🌟 팀원들이 만든 서비스 객체들을 담을 변수들
     private BorrowSvc borrowSvc;
     private SearchSvc searchSvc;
     private ReturnSvc returnSvc;
@@ -22,24 +21,21 @@ public class LibraryMainUI extends JFrame {
     private BookAdminSvc bookAdminSvc;
     private IMemberRepository memberRepo;
 
-    private boolean isAdminLoggedIn = false;  // 🔒 관리자 로그인 상태
-    private boolean isStudentLoggedIn = false; // 🔓 학생 로그인 상태
-    private String loggedInStudentId = null;   // 로그인한 학생 ID(내 대출현황 조회용)
+    private boolean isAdminLoggedIn = false;
+    private boolean isStudentLoggedIn = false;
+    private String loggedInStudentId = null;
 
-    // 멤버 변수 선언
     private JButton btnCreate;
     private JButton btnUpdate;
     private JButton btnStudentLogin;
     private JButton btnAdminLogin;
     private JButton btnRegister;
-    private JButton btnMyLoans;   // 학생 전용: 내 대출현황
-    private JButton btnHistory;   // 사서 전용: 대출 이력 / 연체
+    private JButton btnMyLoans;
+    private JButton btnHistory;
 
-    // 🌟 1. 팀원들의 Main.java 규격에 맞춘 6개짜리 생성자
     public LibraryMainUI(BorrowSvc borrowSvc, SearchSvc searchSvc, ReturnSvc returnSvc,
                          HistorySvc historySvc, BookAdminSvc bookAdminSvc, IMemberRepository memberRepo) {
 
-        // 넘어온 서비스들을 변수에 저장
         this.borrowSvc = borrowSvc;
         this.searchSvc = searchSvc;
         this.returnSvc = returnSvc;
@@ -56,9 +52,9 @@ public class LibraryMainUI extends JFrame {
         c.setLayout(new BorderLayout(0, 0));
         c.setBackground(new Color(245, 247, 250));
 
-        // =================================================================
-        // 2. 상단 탑바 영역 (로그인 버튼 3종)
-        // =================================================================
+        // ==========================================
+        // 탑바 영역
+        // ==========================================
         JPanel topBar = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -95,7 +91,7 @@ public class LibraryMainUI extends JFrame {
 
         btnRegister = new JButton("회원가입");
         btnRegister.setBackground(new Color(12, 45, 74));
-        btnRegister.setForeground(Color.CYAN);
+        btnRegister.setForeground(Color.black);
         btnRegister.setFont(new Font("맑은 고딕", Font.BOLD, 13));
         btnRegister.setFocusPainted(false);
         btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -106,25 +102,24 @@ public class LibraryMainUI extends JFrame {
         topBar.add(memberMenuPanel, BorderLayout.EAST);
         c.add(topBar, BorderLayout.NORTH);
 
-        // =================================================================
-        // 3. 중앙 메인 메뉴 영역 (아이콘 버튼 5개)
-        // =================================================================
+        // ==========================================
+        // 중앙 메인 메뉴 영역 (대출 버튼 제거됨)
+        // ==========================================
         JPanel mainContentPanel = new JPanel();
         mainContentPanel.setLayout(new BoxLayout(mainContentPanel, BoxLayout.Y_AXIS));
         mainContentPanel.setOpaque(false);
         mainContentPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
 
-        JPanel row1 = new JPanel(new GridLayout(1, 4, 25, 0));
+        // 🌟 버튼이 3개로 줄었으므로 GridLayout을 (1, 3)으로 수정
+        JPanel row1 = new JPanel(new GridLayout(1, 3, 25, 0));
         row1.setOpaque(false);
 
-        JButton btnBorrow = createCoolButton("📖", "도서 대출", new Color(33, 102, 224));
+        JButton btnSearch = createCoolButton("🔍", "도서 검색 및 대출", new Color(123, 31, 230));
         JButton btnReturn = createCoolButton("↩", "도서 반납", new Color(0, 147, 171));
-        JButton btnSearch = createCoolButton("🔍", "도서 검색", new Color(123, 31, 230));
         btnMyLoans = createCoolButton("🧾", "내 대출현황", new Color(0, 120, 140));
 
-        row1.add(btnBorrow);
-        row1.add(btnReturn);
         row1.add(btnSearch);
+        row1.add(btnReturn);
         row1.add(btnMyLoans);
 
         JPanel row2Wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 25));
@@ -149,188 +144,124 @@ public class LibraryMainUI extends JFrame {
 
         updateAuthorityUI();
 
-        // =================================================================
-        // 4. 컴포넌트 이벤트 리스너 (기능 연결)
-        // =================================================================
+        // ==========================================
+        // 리스너 연결
+        // ==========================================
+        btnStudentLogin.addActionListener(e -> {
+            if (!isStudentLoggedIn) {
+                String studentId = JOptionPane.showInputDialog(null, "학번(ID)을 입력하세요", "학생 로그인", JOptionPane.QUESTION_MESSAGE);
+                if (studentId != null && !studentId.trim().isEmpty()) {
+                    String id = studentId.trim();
+                    java.util.Optional<library.model.Member> memberOpt = memberRepo.findById(id);
 
-        // [학생 로그인] 버튼 액션
-        btnStudentLogin.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!isStudentLoggedIn) {
-                    String studentId = JOptionPane.showInputDialog(null, "학번(ID)을 입력하세요", "학생 로그인", JOptionPane.QUESTION_MESSAGE);
-                    if (studentId != null && !studentId.trim().isEmpty()) {
-                        String id = studentId.trim();
-
-                        // 🌟 memberRepo를 통해 DB에서 해당 학번의 회원 정보를 찾습니다.
-                        java.util.Optional<library.model.Member> memberOpt = memberRepo.findById(id);
-
-                        if (memberOpt.isPresent()) {
-                            // 회원이 존재하면 정보를 꺼내서 이름을 가져옵니다.
-                            library.model.Member member = memberOpt.get();
-
-                            isStudentLoggedIn = true;
-                            // loggedInStudentId = id; // (변수 그대로 유지)
-
-                            // 학번 대신 member.getName()으로 이름을 출력합니다!
-                            JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + member.getName() + "] 님 환영합니다.");
-                            btnStudentLogin.setText("학생 로그아웃");
-                        } else {
-                            // 🌟 DB에 없는 학번을 입력했을 경우의 예외 처리
-                            JOptionPane.showMessageDialog(null, "❌ 등록되지 않은 학번입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
-                        }
+                    if (memberOpt.isPresent()) {
+                        isStudentLoggedIn = true;
+                        loggedInStudentId = id;
+                        JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + memberOpt.get().getName() + "] 님 환영합니다.");
+                        btnStudentLogin.setText("학생 로그아웃");
+                    } else {
+                        JOptionPane.showMessageDialog(null, "❌ 등록되지 않은 학번입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
                     }
-                } else {
-                    isStudentLoggedIn = false;
-                    // loggedInStudentId = null; // (근형님이 만드신 변수 그대로 유지)
-                    JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
-                    btnStudentLogin.setText("학생 로그인");
                 }
-                updateAuthorityUI();
+            } else {
+                isStudentLoggedIn = false;
+                loggedInStudentId = null;
+                JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
+                btnStudentLogin.setText("학생 로그인");
             }
+            updateAuthorityUI();
         });
 
-        btnAdminLogin.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!isAdminLoggedIn) {
-                    String adminId = JOptionPane.showInputDialog(null, "관리자 ID를 입력하세요 (테스트: admin)", "관리자 로그인", JOptionPane.QUESTION_MESSAGE);
-                    if ("admin".equals(adminId)) {
-                        isAdminLoggedIn = true;
-                        JOptionPane.showMessageDialog(null, "🔓 관리자 권한이 활성화되었습니다. 하단의 [사서 전용] 메뉴가 열립니다.");
-                    } else if (adminId != null) {
-                        JOptionPane.showMessageDialog(null, "❌ 잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
-                    }
-                } else {
-                    isAdminLoggedIn = false;
-                    JOptionPane.showMessageDialog(null, "🔒 관리자 기능이 잠깁니다.");
+        btnAdminLogin.addActionListener(e -> {
+            if (!isAdminLoggedIn) {
+                String adminId = JOptionPane.showInputDialog(null, "관리자 ID를 입력하세요", "관리자 로그인", JOptionPane.QUESTION_MESSAGE);
+                if ("admin".equals(adminId)) {
+                    isAdminLoggedIn = true;
+                    JOptionPane.showMessageDialog(null, "🔓 관리자 권한 활성화");
+                } else if (adminId != null) {
+                    JOptionPane.showMessageDialog(null, "❌ 잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
                 }
-                updateAuthorityUI();
+            } else {
+                isAdminLoggedIn = false;
+                JOptionPane.showMessageDialog(null, "🔒 관리자 기능이 잠깁니다.");
             }
+            updateAuthorityUI();
         });
 
-// [회원가입] 버튼 액션
-        btnRegister.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // 🌟 새로 만든 가입 창을 띄우면서 DB 연결용 memberRepo를 넘겨줍니다!
-                new RegisterUI(memberRepo);
-            }
+        btnRegister.addActionListener(e -> new RegisterUI(memberRepo));
+
+        // 🌟 [도서 검색 및 대출] 화면 오픈 시 하단 대출 UI를 위해 borrowSvc 등 전부 전달
+        btnSearch.addActionListener(e -> {
+            JFrame searchFrame = new JFrame("도서 검색 및 대출 시스템");
+            searchFrame.setSize(750, 500);
+            searchFrame.setLocationRelativeTo(null);
+            searchFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+            searchFrame.add(new SearchUI(searchSvc, bookAdminSvc, borrowSvc, loggedInStudentId, isAdminLoggedIn));
+            searchFrame.setVisible(true);
         });
 
-        // 🌟 [도서 대출]
-        btnBorrow.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new BorrowUI(borrowSvc);
-            }
+        btnReturn.addActionListener(e -> {
+            JFrame returnFrame = new JFrame("도서 반납 시스템");
+            returnFrame.setSize(550, 400);
+            returnFrame.setLocationRelativeTo(null);
+            returnFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            returnFrame.add(new ReturnUI(returnSvc, historySvc));
+            returnFrame.setVisible(true);
         });
 
-        // 🌟 [도서 반납] - returnSvc, historySvc 연결
-        btnReturn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame returnFrame = new JFrame("도서 반납 시스템");
-                returnFrame.setSize(550, 400);
-                returnFrame.setLocationRelativeTo(null);
-                returnFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-                returnFrame.add(new ReturnUI(returnSvc, historySvc));
-                returnFrame.setVisible(true);
-            }
+        btnCreate.addActionListener(e -> {
+            JFrame adminFrame = new JFrame("사서 전용 - 도서 관리 시스템");
+            adminFrame.setSize(600, 500);
+            adminFrame.setLocationRelativeTo(null);
+            adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            adminFrame.add(new BookAdminUI(bookAdminSvc));
+            adminFrame.setVisible(true);
         });
 
-        // 🌟 [도서 검색] - searchSvc, bookAdminSvc 연결
-        btnSearch.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame searchFrame = new JFrame("도서 검색 시스템");
-                searchFrame.setSize(650, 450);
-                searchFrame.setLocationRelativeTo(null);
-                searchFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-                searchFrame.add(new SearchUI(searchSvc, bookAdminSvc));
-                searchFrame.setVisible(true);
-            }
+        btnUpdate.addActionListener(e -> {
+            JFrame adminFrame = new JFrame("사서 전용 - 도서 관리 시스템");
+            adminFrame.setSize(600, 500);
+            adminFrame.setLocationRelativeTo(null);
+            adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            adminFrame.add(new BookAdminUI(bookAdminSvc));
+            adminFrame.setVisible(true);
         });
 
-        // 🌟 [도서 등록 (사서)]
-        btnCreate.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame adminFrame = new JFrame("사서 전용 - 도서 관리 시스템");
-                adminFrame.setSize(600, 500);
-                adminFrame.setLocationRelativeTo(null);
-                adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-                adminFrame.add(new BookAdminUI(bookAdminSvc));
-                adminFrame.setVisible(true);
+        btnMyLoans.addActionListener(e -> {
+            if (loggedInStudentId == null) {
+                JOptionPane.showMessageDialog(null, "학생 로그인 후 사용 가능합니다.", "알림", JOptionPane.INFORMATION_MESSAGE);
+                return;
             }
+            JFrame f = new JFrame("내 대출현황 - " + loggedInStudentId);
+            f.setSize(760, 480);
+            f.setLocationRelativeTo(null);
+            f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            f.add(new MyLoansUI(historySvc, loggedInStudentId));
+            f.setVisible(true);
         });
 
-        // 🌟 [도서 수정/삭제 (사서)]
-        btnUpdate.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame adminFrame = new JFrame("사서 전용 - 도서 관리 시스템");
-                adminFrame.setSize(600, 500);
-                adminFrame.setLocationRelativeTo(null);
-                adminFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
-                adminFrame.add(new BookAdminUI(bookAdminSvc));
-                adminFrame.setVisible(true);
-            }
-        });
-
-        // 🌟 [내 대출현황] - 학생 본인 ID 고정, 읽기 전용
-        btnMyLoans.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (loggedInStudentId == null) {
-                    JOptionPane.showMessageDialog(null, "학생 로그인 후 사용 가능합니다.", "알림", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                JFrame f = new JFrame("내 대출현황 - " + loggedInStudentId);
-                f.setSize(760, 480);
-                f.setLocationRelativeTo(null);
-                f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                f.add(new MyLoansUI(historySvc, loggedInStudentId));
-                f.setVisible(true);
-            }
-        });
-
-        // 🌟 [대출 이력 / 연체] - 사서 전용(전체 회원 조회)
-        btnHistory.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JFrame f = new JFrame("대출 이력 / 연체 조회 (사서)");
-                f.setSize(780, 480);
-                f.setLocationRelativeTo(null);
-                f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                f.add(new HistoryUI(historySvc));
-                f.setVisible(true);
-            }
+        btnHistory.addActionListener(e -> {
+            JFrame f = new JFrame("대출 이력 / 연체 조회 (사서)");
+            f.setSize(780, 480);
+            f.setLocationRelativeTo(null);
+            f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            f.add(new HistoryUI(historySvc));
+            f.setVisible(true);
         });
 
         setVisible(true);
     }
 
     private void updateAuthorityUI() {
-        // 사서 전용: 등록/수정/대출이력
         boolean staff = isAdminLoggedIn;
         btnAdminLogin.setText(staff ? "관리자 로그아웃" : "관리자 로그인");
         btnCreate.setEnabled(staff);
         btnUpdate.setEnabled(staff);
         btnHistory.setEnabled(staff);
-        String staffTip = staff ? null : "관리자 로그인 후 사용 가능한 기능입니다.";
-        btnCreate.setToolTipText(staff ? "도서 등록이 가능합니다." : staffTip);
-        btnUpdate.setToolTipText(staff ? "도서 수정 및 삭제가 가능합니다." : staffTip);
-        btnHistory.setToolTipText(staff ? "전체 대출 이력/연체를 조회합니다." : staffTip);
 
-        // 학생 전용: 내 대출현황
         btnMyLoans.setEnabled(isStudentLoggedIn);
-        btnMyLoans.setToolTipText(isStudentLoggedIn
-                ? "내 대출/연체 현황을 봅니다." : "학생 로그인 후 사용 가능합니다.");
+        btnMyLoans.setToolTipText(isStudentLoggedIn ? "내 대출/연체 현황을 봅니다." : "학생 로그인 후 사용 가능합니다.");
     }
 
     private JButton createCoolButton(String icon, String title, Color pointColor) {
@@ -350,9 +281,7 @@ public class LibraryMainUI extends JFrame {
                 } else {
                     g2.setColor(Color.WHITE);
                 }
-
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 16, 16);
-
                 if (isEnabled()) {
                     g2.setColor(pointColor);
                 } else {
@@ -360,10 +289,8 @@ public class LibraryMainUI extends JFrame {
                 }
                 g2.fillRoundRect(0, 0, getWidth(), 10, 16, 16);
                 g2.fillRect(0, 5, getWidth(), 5);
-
                 g2.setColor(new Color(218, 224, 233));
                 g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 16, 16);
-
                 g2.dispose();
                 super.paintComponent(g);
             }
@@ -373,7 +300,6 @@ public class LibraryMainUI extends JFrame {
         button.setBorderPainted(false);
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
         return button;
     }
 }

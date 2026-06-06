@@ -47,7 +47,7 @@ public class RegisterUI extends JFrame {
         // 3. 가입 버튼
         JButton btnSubmit = new JButton("가입하기");
         btnSubmit.setBackground(new Color(12, 45, 74)); // 상단 네이비 바와 색상 맞춤
-        btnSubmit.setForeground(Color.CYAN);
+        btnSubmit.setForeground(Color.black);
         btnSubmit.setFont(new Font("맑은 고딕", Font.BOLD, 14));
 
         c.add(idPanel);
