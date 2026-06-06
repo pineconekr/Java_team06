@@ -153,20 +153,36 @@ public class LibraryMainUI extends JFrame {
         // 4. 컴포넌트 이벤트 리스너 (기능 연결)
         // =================================================================
 
+        // [학생 로그인] 버튼 액션
         btnStudentLogin.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!isStudentLoggedIn) {
                     String studentId = JOptionPane.showInputDialog(null, "학번(ID)을 입력하세요", "학생 로그인", JOptionPane.QUESTION_MESSAGE);
                     if (studentId != null && !studentId.trim().isEmpty()) {
-                        isStudentLoggedIn = true;
-                        loggedInStudentId = studentId.trim();
-                        JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + studentId + "] 님 환영합니다.");
-                        btnStudentLogin.setText("학생 로그아웃");
+                        String id = studentId.trim();
+
+                        // 🌟 memberRepo를 통해 DB에서 해당 학번의 회원 정보를 찾습니다.
+                        java.util.Optional<library.model.Member> memberOpt = memberRepo.findById(id);
+
+                        if (memberOpt.isPresent()) {
+                            // 회원이 존재하면 정보를 꺼내서 이름을 가져옵니다.
+                            library.model.Member member = memberOpt.get();
+
+                            isStudentLoggedIn = true;
+                            // loggedInStudentId = id; // (변수 그대로 유지)
+
+                            // 학번 대신 member.getName()으로 이름을 출력합니다!
+                            JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + member.getName() + "] 님 환영합니다.");
+                            btnStudentLogin.setText("학생 로그아웃");
+                        } else {
+                            // 🌟 DB에 없는 학번을 입력했을 경우의 예외 처리
+                            JOptionPane.showMessageDialog(null, "❌ 등록되지 않은 학번입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 } else {
                     isStudentLoggedIn = false;
-                    loggedInStudentId = null;
+                    // loggedInStudentId = null; // (근형님이 만드신 변수 그대로 유지)
                     JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
                     btnStudentLogin.setText("학생 로그인");
                 }
@@ -193,10 +209,12 @@ public class LibraryMainUI extends JFrame {
             }
         });
 
+// [회원가입] 버튼 액션
         btnRegister.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(null, "신규 회원가입 창을 구동합니다.", "회원가입", JOptionPane.INFORMATION_MESSAGE);
+                // 🌟 새로 만든 가입 창을 띄우면서 DB 연결용 memberRepo를 넘겨줍니다!
+                new RegisterUI(memberRepo);
             }
         });
 
