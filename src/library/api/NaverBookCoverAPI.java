@@ -13,8 +13,8 @@ import java.net.URLEncoder;
 
 public class NaverBookCoverAPI {
 
-    private static final String CLIENT_ID =  EnvConfig.get("NAVER_CLIENT_ID", "");
-    private static final String CLIENT_SECRET = EnvConfig.get("NAVER_CLIENT_SECRET", "");
+    private static final String CLIENT_ID =  EnvConfig.get("NAVER_CLIENT_ID", "M6AjNV2DlFXddRkKl6YO");
+    private static final String CLIENT_SECRET = EnvConfig.get("NAVER_CLIENT_SECRET", "yXuQRpigHu");
 
     public String findCover(String isbn) {
 
