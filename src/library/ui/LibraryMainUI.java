@@ -110,13 +110,13 @@ public class LibraryMainUI extends JFrame {
         mainContentPanel.setOpaque(false);
         mainContentPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
 
-        // 🌟 버튼이 3개로 줄었으므로 GridLayout을 (1, 3)으로 수정
+        // 이용자 메뉴 3개 (GridLayout 1x3)
         JPanel row1 = new JPanel(new GridLayout(1, 3, 25, 0));
         row1.setOpaque(false);
 
-        JButton btnSearch = createCoolButton("🔍", "도서 검색 및 대출", new Color(123, 31, 230));
-        JButton btnReturn = createCoolButton("↩", "도서 반납", new Color(0, 147, 171));
-        btnMyLoans = createCoolButton("🧾", "내 대출현황", new Color(0, 120, 140));
+        JButton btnSearch = createCoolButton("도서 검색 및 대출", new Color(123, 31, 230));
+        JButton btnReturn = createCoolButton("도서 반납", new Color(0, 147, 171));
+        btnMyLoans = createCoolButton("내 대출현황", new Color(0, 120, 140));
 
         row1.add(btnSearch);
         row1.add(btnReturn);
@@ -129,9 +129,9 @@ public class LibraryMainUI extends JFrame {
         row2.setPreferredSize(new Dimension(880, 150));
         row2.setOpaque(false);
 
-        btnCreate = createCoolButton("➕", "도서 등록 (사서)", new Color(15, 157, 88));
-        btnUpdate = createCoolButton("📝", "도서 정보 수정/삭제 (사서)", new Color(214, 115, 0));
-        btnHistory = createCoolButton("📋", "대출 이력 / 연체 (사서)", new Color(190, 80, 30));
+        btnCreate = createCoolButton("도서 등록 (사서)", new Color(15, 157, 88));
+        btnUpdate = createCoolButton("도서 정보 수정/삭제 (사서)", new Color(214, 115, 0));
+        btnHistory = createCoolButton("대출 이력 / 연체 (사서)", new Color(190, 80, 30));
 
         row2.add(btnCreate);
         row2.add(btnUpdate);
@@ -157,16 +157,16 @@ public class LibraryMainUI extends JFrame {
                     if (memberOpt.isPresent()) {
                         isStudentLoggedIn = true;
                         loggedInStudentId = id;
-                        JOptionPane.showMessageDialog(null, "🔓 학생 인증 성공: [" + memberOpt.get().getName() + "] 님 환영합니다.");
+                        JOptionPane.showMessageDialog(null, "학생 인증 성공: [" + memberOpt.get().getName() + "] 님 환영합니다.");
                         btnStudentLogin.setText("학생 로그아웃");
                     } else {
-                        JOptionPane.showMessageDialog(null, "❌ 등록되지 않은 학번입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "등록되지 않은 학번입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
                     }
                 }
             } else {
                 isStudentLoggedIn = false;
                 loggedInStudentId = null;
-                JOptionPane.showMessageDialog(null, "🔒 로그아웃 되었습니다.");
+                JOptionPane.showMessageDialog(null, "로그아웃 되었습니다.");
                 btnStudentLogin.setText("학생 로그인");
             }
             updateAuthorityUI();
@@ -177,20 +177,20 @@ public class LibraryMainUI extends JFrame {
                 String adminId = JOptionPane.showInputDialog(null, "관리자 ID를 입력하세요", "관리자 로그인", JOptionPane.QUESTION_MESSAGE);
                 if ("admin".equals(adminId)) {
                     isAdminLoggedIn = true;
-                    JOptionPane.showMessageDialog(null, "🔓 관리자 권한 활성화");
+                    JOptionPane.showMessageDialog(null, "관리자 권한 활성화");
                 } else if (adminId != null) {
-                    JOptionPane.showMessageDialog(null, "❌ 잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "잘못된 관리자 ID입니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
                 }
             } else {
                 isAdminLoggedIn = false;
-                JOptionPane.showMessageDialog(null, "🔒 관리자 기능이 잠깁니다.");
+                JOptionPane.showMessageDialog(null, "관리자 기능이 잠깁니다.");
             }
             updateAuthorityUI();
         });
 
         btnRegister.addActionListener(e -> new RegisterUI(memberRepo));
 
-        // 🌟 [도서 검색 및 대출] 화면 오픈 시 하단 대출 UI를 위해 borrowSvc 등 전부 전달
+        // [도서 검색 및 대출] 화면 오픈 시 하단 대출 UI를 위해 borrowSvc 등 전부 전달
         btnSearch.addActionListener(e -> {
             JFrame searchFrame = new JFrame("도서 검색 및 대출 시스템");
             searchFrame.setSize(750, 500);
@@ -202,8 +202,13 @@ public class LibraryMainUI extends JFrame {
         });
 
         btnReturn.addActionListener(e -> {
-            JFrame returnFrame = new JFrame("도서 반납 시스템");
-            returnFrame.setSize(550, 400);
+            // 반납은 사서(관리자) 전용 — 실제 도서관처럼 데스크에서 처리. 학생은 '내 대출현황'만.
+            if (!isAdminLoggedIn) {
+                JOptionPane.showMessageDialog(null, "도서 반납은 사서(관리자) 전용입니다.\n관리자 로그인 후 사용하세요.", "알림", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            JFrame returnFrame = new JFrame("도서 반납 (사서)");
+            returnFrame.setSize(720, 600);
             returnFrame.setLocationRelativeTo(null);
             returnFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             returnFrame.add(new ReturnUI(returnSvc, historySvc));
@@ -264,9 +269,8 @@ public class LibraryMainUI extends JFrame {
         btnMyLoans.setToolTipText(isStudentLoggedIn ? "내 대출/연체 현황을 봅니다." : "학생 로그인 후 사용 가능합니다.");
     }
 
-    private JButton createCoolButton(String icon, String title, Color pointColor) {
-        String htmlText = "<html><center><font size='6' color='" + String.format("#%02x%02x%02x", pointColor.getRed(), pointColor.getGreen(), pointColor.getBlue()) + "'>" + icon + "</font><br><br>"
-                + "<font size='4' color='#2C3E50'><b>" + title + "</b></font></center></html>";
+    private JButton createCoolButton(String title, Color pointColor) {
+        String htmlText = "<html><center><font size='5' color='#2C3E50'><b>" + title + "</b></font></center></html>";
 
         JButton button = new JButton(htmlText) {
             @Override
